@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Eilidh & Finlay's First Goldfish</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Trebuchet MS', 'Comic Sans MS', Verdana, sans-serif;
+    color: #1c3d5a;
+    background: linear-gradient(180deg, #bdeeff 0%, #8fd8f5 50%, #5cc0e8 100%);
+    overflow: hidden;
+  }
+  #app { position: relative; width: 100%; height: 100vh; }
+  .bubble { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.35); border: 2px solid rgba(255,255,255,0.6); animation: float 8s ease-in-out infinite; }
+  @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-18px); } }
+
+  #topbar { position: absolute; top: 0; left: 0; right: 0; height: 74px; background: rgba(255,255,255,0.92); display: flex; align-items: center; justify-content: space-between; padding: 0 14px; box-shadow: 0 3px 10px rgba(0,0,0,0.15); z-index: 10; }
+  #logo { display:flex; align-items:center; gap:8px; font-weight:bold; color:#ff6b35; font-size: 15px; flex-shrink:0; }
+  #navdots { display:flex; gap:4px; flex-wrap: nowrap; overflow-x:auto; max-width: 78%; padding: 4px; }
+  .navdot { cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size: 16px; background: #eaf9ff; border: 3px solid #a6e3ff; transition: transform 0.15s, background 0.15s; flex-shrink:0; }
+  .navdot:hover { transform: scale(1.1); }
+  .navdot.active { background: #ff9f1c; border-color:#cc7a00; color:white; }
+
+  .page { position: absolute; top: 74px; left: 0; right: 0; bottom: 0; overflow-y: auto; padding: 22px 6% 90px 6%; display: none; }
+  .page.active { display: block; animation: fadein 0.35s ease; }
+  @keyframes fadein { from { opacity:0; transform: translateY(10px);} to {opacity:1; transform: translateY(0);} }
+
+  .chapter-tag { background: #ff9f1c; color: white; font-weight: bold; padding: 6px 22px; border-radius: 30px; font-size: 14px; letter-spacing: 1px; display:inline-block; box-shadow: 0 3px 0 #cc7a00; }
+  .chapter-tag.emergency { background:#e63946; box-shadow:0 3px 0 #a02532; }
+  .chapter-tag.science { background:#7b61ff; box-shadow:0 3px 0 #4d3aad; }
+  h1.pagetitle { font-size: clamp(24px,3.6vw,38px); color:#ff6b35; text-shadow: 2px 2px 0 #ffd23f; margin: 10px 0 8px 0; }
+  h3 { font-size: 18px; color:#1c6e8c; margin: 0 0 6px 0; }
+  p, li { font-size: 15px; line-height: 1.48; }
+
+  .card { background: white; border-radius: 20px; padding: 14px 18px; margin-bottom: 12px; box-shadow: 0 5px 0 #cfe8f5; border: 3px solid #a6e3ff; }
+  .card-yellow { border-color:#ffd23f; box-shadow:0 5px 0 #ffe08a; }
+  .card-pink { border-color:#ffb3c6; box-shadow:0 5px 0 #ffd6e0; }
+  .card-green { border-color:#b7e4c7; box-shadow:0 5px 0 #d8f3dc; }
+  .card-red { border-color:#ff9b9b; box-shadow:0 5px 0 #ffc9c9; }
+
+  .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+  .grid3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; }
+  @media (max-width:700px){ .grid2, .grid3 { grid-template-columns: 1fr; } }
+
+  .fishcard { display:flex; gap:12px; align-items:flex-start; }
+  .icon-circle { width: 48px; height: 48px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size: 22px; flex-shrink:0; box-shadow: 0 3px 0 rgba(0,0,0,0.1); }
+
+  #bottombar { position: absolute; bottom: 0; left:0; right:0; height: 58px; background: rgba(255,255,255,0.92); display:flex; align-items:center; justify-content: space-between; padding: 0 18px; box-shadow: 0 -3px 10px rgba(0,0,0,0.12); z-index: 10; }
+  .navbtn { background:#ff9f1c; color:white; border:none; border-radius: 20px; padding: 9px 18px; font-weight:bold; font-size:14px; cursor:pointer; box-shadow: 0 4px 0 #cc7a00; transition: transform 0.1s; }
+  .navbtn:hover { transform: translateY(-2px); }
+  .navbtn:disabled { opacity: 0.35; cursor:default; }
+  #pageLabel { font-size: 13px; color:#5a8fa8; font-weight:bold; text-align:center; }
+
+  .quizQ { margin-bottom: 16px; }
+  .quizOptions { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+  .quizOpt { text-align:left; cursor:pointer; background:#eaf9ff; border:3px solid #a6e3ff; border-radius:16px; padding: 10px 16px; font-size:14.5px; font-weight:bold; color:#1c3d5a; transition: transform 0.1s; }
+  .quizOpt:hover { transform: translateX(4px); }
+  .quizOpt.correct { background:#d8f3dc; border-color:#4caf50; color:#1b5e20; }
+  .quizOpt.wrong { background:#ffd6e0; border-color:#ff6b81; color:#a4133c; }
+  .quizOpt.disabled { pointer-events:none; opacity:0.85; }
+  .quizFeedback { font-size:13.5px; margin-top:6px; font-weight:bold; }
+
+  #scoreBox { text-align:center; margin-top: 18px; }
+  #scoreBig { font-size: 40px; color:#ff6b35; font-weight:bold; }
+  #retryBtn { margin-top: 14px; background:#1c6e8c; color:white; border:none; border-radius:20px; padding: 12px 26px; font-weight:bold; font-size:15px; cursor:pointer; box-shadow: 0 4px 0 #124a5e; }
+
+  .badge { display:inline-block; background:#fff3b0; border:2px dashed #ff9f1c; border-radius:16px; padding:4px 12px; font-weight:bold; color:#b35c00; font-size:12px; margin: 3px; }
+  #coverFish { animation: swim 4s ease-in-out infinite; }
+  @keyframes swim { 0%,100%{ transform: translateX(0) rotate(0deg);} 50%{ transform: translateX(12px) rotate(-2deg);} }
+
+  .myth { background:#ffe3e3; border:3px solid #ff9b9b; border-radius:16px; padding:9px 14px; margin-bottom:5px; font-size:14.5px; }
+  .fact { background:#dff6e0; border:3px solid #8fd99a; border-radius:16px; padding:9px 14px; margin-bottom:14px; font-size:14.5px; }
+  .numchip { width: 22px; height: 22px; border-radius: 50%; background:#ff9f1c; color:white; display:inline-flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px; flex-shrink:0; }
+
+  table.diary { width:100%; border-collapse: collapse; margin-top:8px; font-size:12.5px; }
+  table.diary th, table.diary td { border: 2px solid #a6e3ff; padding: 7px; text-align:center; }
+  table.diary th { background:#eaf9ff; }
+  table.diary td[contenteditable] { background: #fffef7; cursor:text; min-width: 40px; }
+  table.diary td[contenteditable]:focus { background:#fff3b0; outline:none; }
+
+  .parentterm { margin-bottom:9px; font-size:14px; }
+  .parentterm b { color:#1c6e8c; }
+  .page.parent { background:#f2f4f7; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="bubble" style="width:22px;height:22px; left:4%; top:90px; animation-delay:0s;"></div>
+  <div class="bubble" style="width:14px;height:14px; left:10%; top:150px; animation-delay:1s;"></div>
+  <div class="bubble" style="width:28px;height:28px; right:4%; top:95px; animation-delay:0.5s;"></div>
+
+  <div id="topbar">
+    <div id="logo"><span>🐠</span><span>Eilidh &amp; Finlay's Goldfish Guide</span></div>
+    <div id="navdots"></div>
+  </div>
+
+  <!-- 0: COVER -->
+  <div class="page active" data-page="0" style="text-align:center; padding-top:26px;">
+    <svg id="coverFish" width="260" height="200" viewBox="0 0 380 300" style="margin-top:6px;">
+      <path d="M60,150 Q10,90 20,150 Q10,210 60,150 Z" fill="#ff7a30" stroke="#c9501a" stroke-width="4"/>
+      <ellipse cx="190" cy="150" rx="130" ry="85" fill="#ff9142" stroke="#c9501a" stroke-width="5"/>
+      <ellipse cx="190" cy="185" rx="95" ry="45" fill="#ffb066" opacity="0.7"/>
+      <path d="M170,225 Q150,270 200,235 Z" fill="#ff7a30" stroke="#c9501a" stroke-width="3"/>
+      <path d="M230,220 Q260,255 245,215 Z" fill="#ff7a30" stroke="#c9501a" stroke-width="3"/>
+      <path d="M150,90 Q170,50 200,90 Z" fill="#ff7a30" stroke="#c9501a" stroke-width="3"/>
+      <circle cx="290" cy="130" r="18" fill="white" stroke="#c9501a" stroke-width="3"/>
+      <circle cx="296" cy="130" r="8" fill="#1c3d5a"/>
+      <path d="M330,155 Q345,160 330,168" fill="none" stroke="#c9501a" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+    <h1 class="pagetitle">EILIDH &amp; FINLAY'S<br>FIRST GOLDFISH</h1>
+    <p style="font-size:17px; font-weight:bold; color:#1c6e8c;">The Complete Fun Guide to Tanks, Care &amp; Feeding! 🐠</p>
+    <div style="margin-top:10px;">
+      <span class="badge">🐟 Fish Facts</span><span class="badge">🏠 Tank Setup</span><span class="badge">🔬 Science Bits</span><span class="badge">🍽️ Feeding</span><span class="badge">🚨 Emergencies</span><span class="badge">📝 Quiz</span>
+    </div>
+    <p style="margin-top:20px; color:#1c6e8c; font-weight:bold;">👉 Tap "Next" below, or use the buttons up top to jump to any chapter!</p>
+  </div>
+
+  <!-- 1: WELCOME -->
+  <div class="page" data-page="1">
+    <div class="chapter-tag">CHAPTER 1</div>
+    <h1 class="pagetitle" style="font-size:27px;">Welcome, Eilidh &amp; Finlay! 🎉</h1>
+    <p>Congratulations on your very first goldfish! Goldfish are friendly, colourful pets that can live for a <b>long</b> time — some even live 15-20 years — if you take good care of them.</p>
+    <div class="card card-yellow">
+      <h3>🛒 What You'll Need Before Your Fish Arrives</h3>
+      <ul><li><b>A big tank</b> — at least 75-100 litres for one goldfish</li><li><b>A filter</b> — to keep the water clean</li><li><b>Gravel or sand</b></li><li><b>A water conditioner</b></li><li><b>A water testing kit</b></li><li><b>A fish net</b></li><li><b>Fish food</b> — goldfish flakes or pellets</li><li><b>Decorations</b> — nothing sharp!</li></ul>
+    </div>
+    <div class="card card-pink"><h3>🐠 A Big Important Fact!</h3><p style="margin:0;">Goldfish grow to be 15-30cm long! They need lots of room to swim. A tiny bowl is never enough space — see Chapter 4 for why.</p></div>
+  </div>
+
+  <!-- 2: EQUIPMENT DIAGRAM -->
+  <div class="page" data-page="2">
+    <div class="chapter-tag">CHAPTER 2</div>
+    <h1 class="pagetitle" style="font-size:27px;">Your Tank, Labelled! 🔍</h1>
+    <p>Here's what's inside a well-set-up goldfish tank. Can you spot all of these at home?</p>
+    <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap;">
+      <svg width="260" height="240" viewBox="0 0 300 280" style="flex-shrink:0;">
+        <rect x="10" y="8" width="260" height="18" rx="4" fill="#8d6e63"/>
+        <rect x="10" y="26" width="260" height="200" fill="#cdf0ff" stroke="#5cc0e8" stroke-width="5"/>
+        <rect x="10" y="180" width="260" height="46" fill="#e7c88a"/>
+        <ellipse cx="70" cy="200" rx="10" ry="18" fill="#4caf50"/>
+        <ellipse cx="85" cy="195" rx="8" ry="22" fill="#66bb6a"/>
+        <rect x="60" y="160" width="26" height="20" fill="#b0bec5" rx="3"/>
+        <circle cx="150" cy="130" r="26" fill="#ff9142" stroke="#c9501a" stroke-width="3"/>
+        <path d="M126,130 Q108,115 108,130 Q108,145 126,130" fill="#ff7a30"/>
+        <circle cx="170" cy="123" r="3.5" fill="#1c3d5a"/>
+        <rect x="245" y="30" width="9" height="150" fill="#9e9e9e" rx="3"/>
+        <circle cx="249" cy="40" r="4" fill="#e0e0e0"/>
+        <rect x="215" y="40" width="8" height="130" fill="#78909c" rx="3"/>
+        <circle cx="230" cy="20" r="11" fill="#ff9f1c"/><text x="230" y="24" font-size="12" fill="white" text-anchor="middle" font-weight="bold">1</text>
+        <circle cx="219" cy="45" r="11" fill="#ff9f1c"/><text x="219" y="49" font-size="12" fill="white" text-anchor="middle" font-weight="bold">2</text>
+        <circle cx="249" cy="35" r="11" fill="#ff9f1c"/><text x="249" y="39" font-size="12" fill="white" text-anchor="middle" font-weight="bold">3</text>
+        <circle cx="130" cy="200" r="11" fill="#ff9f1c"/><text x="130" y="204" font-size="12" fill="white" text-anchor="middle" font-weight="bold">4</text>
+        <circle cx="75" cy="185" r="11" fill="#ff9f1c"/><text x="75" y="189" font-size="12" fill="white" text-anchor="middle" font-weight="bold">5</text>
+        <circle cx="20" cy="16" r="11" fill="#ff9f1c"/><text x="20" y="20" font-size="12" fill="white" text-anchor="middle" font-weight="bold">6</text>
+      </svg>
+      <div style="flex:1; min-width:250px;">
+        <div class="card"><span class="numchip">1</span> &nbsp;<b>Filter</b> — cleans water &amp; grows helpful bacteria</div>
+        <div class="card"><span class="numchip">2</span> &nbsp;<b>Air stone</b> (optional) — extra oxygen bubbles</div>
+        <div class="card"><span class="numchip">3</span> &nbsp;<b>Thermometer</b> — checks the temperature</div>
+        <div class="card"><span class="numchip">4</span> &nbsp;<b>Gravel</b> — holds bacteria too</div>
+        <div class="card"><span class="numchip">5</span> &nbsp;<b>Decorations</b> — safe hiding spots</div>
+        <div class="card"><span class="numchip">6</span> &nbsp;<b>Lid &amp; Light</b> — keeps fish safe, gives day &amp; night</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3: TYPES -->
+  <div class="page" data-page="3">
+    <div class="chapter-tag">CHAPTER 3</div>
+    <h1 class="pagetitle" style="font-size:27px;">Meet the Goldfish Family 🐟</h1>
+    <div class="grid2">
+      <div class="card fishcard"><svg width="56" height="40" viewBox="0 0 70 50"><ellipse cx="35" cy="25" rx="28" ry="16" fill="#ff9142" stroke="#c9501a" stroke-width="3"/><path d="M8,25 Q-5,15 -5,25 Q-5,35 8,25" fill="#ff7a30" stroke="#c9501a" stroke-width="2"/><circle cx="52" cy="20" r="3" fill="#1c3d5a"/></svg><div><h3>Common Goldfish</h3><p style="margin:0;">Classic orange, single tail. Hardy and fast-growing — needs a very large tank or pond!</p></div></div>
+      <div class="card fishcard"><svg width="56" height="40" viewBox="0 0 70 50"><ellipse cx="35" cy="25" rx="24" ry="14" fill="#ffd23f" stroke="#c9501a" stroke-width="3"/><path d="M12,25 Q-8,8 0,25 Q-8,42 12,25" fill="#ff9142" stroke="#c9501a" stroke-width="2"/><circle cx="50" cy="20" r="3" fill="#1c3d5a"/></svg><div><h3>Comet Goldfish</h3><p style="margin:0;">Slim, speedy, long flowing tail. One of the fastest swimmers!</p></div></div>
+      <div class="card fishcard"><svg width="56" height="40" viewBox="0 0 70 50"><ellipse cx="35" cy="25" rx="20" ry="16" fill="#ff7a30" stroke="#c9501a" stroke-width="3"/><path d="M15,30 Q0,45 20,40 Z" fill="#ff9142" stroke="#c9501a" stroke-width="2"/><path d="M15,20 Q0,5 20,10 Z" fill="#ff9142" stroke="#c9501a" stroke-width="2"/><circle cx="48" cy="20" r="3" fill="#1c3d5a"/></svg><div><h3>Fantail Goldfish</h3><p style="margin:0;">Round and chubby, cute double tail. Swims slower and gently.</p></div></div>
+      <div class="card fishcard"><svg width="56" height="40" viewBox="0 0 70 50"><ellipse cx="35" cy="25" rx="22" ry="15" fill="#4a90d9" stroke="#245a8f" stroke-width="3"/><ellipse cx="30" cy="20" rx="8" ry="5" fill="#ff9142"/><path d="M14,28 Q0,42 18,38 Z" fill="#4a90d9" stroke="#245a8f" stroke-width="2"/><circle cx="48" cy="20" r="3" fill="#1c3d5a"/></svg><div><h3>Shubunkin</h3><p style="margin:0;">Speckled rainbow of blue, orange, black &amp; white. Every one is unique!</p></div></div>
+    </div>
+    <div class="card fishcard"><svg width="56" height="40" viewBox="0 0 70 50"><ellipse cx="35" cy="27" rx="20" ry="15" fill="#ff9142" stroke="#c9501a" stroke-width="3"/><circle cx="25" cy="18" r="9" fill="#ff7a30" stroke="#c9501a" stroke-width="2"/><path d="M15,30 Q0,44 18,40 Z" fill="#ff9142" stroke="#c9501a" stroke-width="2"/><circle cx="48" cy="22" r="3" fill="#1c3d5a"/></svg><div><h3>Oranda</h3><p style="margin:0;">Famous bubbly "hat" on its head. Gentle and slow-moving, so keep tankmates calm too.</p></div></div>
+  </div>
+
+  <!-- 4: WHY BOWLS AREN'T HAPPY HOMES -->
+  <div class="page" data-page="4">
+    <div class="chapter-tag">CHAPTER 4</div>
+    <h1 class="pagetitle" style="font-size:27px;">Why Bowls Aren't Happy Homes 🚫🥣</h1>
+    <p>You might see a goldfish in a little round bowl at a fair — but that's not a happy home. Here's why:</p>
+    <div class="grid2">
+      <div class="card fishcard"><div class="icon-circle" style="background:#a6e3ff;">🏊</div><p style="margin:0;">Not enough room to swim</p></div>
+      <div class="card fishcard"><div class="icon-circle" style="background:#ffe08a;">🧪</div><p style="margin:0;">Water gets dirty quickly</p></div>
+      <div class="card fishcard"><div class="icon-circle" style="background:#b7e4c7;">💨</div><p style="margin:0;">Very little oxygen</p></div>
+      <div class="card fishcard"><div class="icon-circle" style="background:#ffb3c6;">🌡️</div><p style="margin:0;">Hard to keep steady temperature</p></div>
+    </div>
+    <div class="card card-yellow"><h3>It's About Kindness, Not Rules 💛</h3><p style="margin:0;">A spacious, clean tank means a happier, healthier fish that can live a long life with you.</p></div>
+  </div>
+
+  <!-- 5: TANK SETUP -->
+  <div class="page" data-page="5">
+    <div class="chapter-tag">CHAPTER 5</div>
+    <h1 class="pagetitle" style="font-size:27px;">Setting Up Your Tank 🏠</h1>
+    <div class="grid2">
+      <div class="card card-green"><h3>1. Pick the Right Size</h3><p style="margin:0;">At least 75-100 litres for one goldfish. Bigger is always better!</p></div>
+      <div class="card card-green"><h3>2. Rinse Everything</h3><p style="margin:0;">Rinse tank, gravel, and decorations with plain water — no soap!</p></div>
+      <div class="card card-green"><h3>3. Fit a Filter</h3><p style="margin:0;">Goldfish make lots of waste, so a good filter is a must.</p></div>
+      <div class="card card-pink"><h3>5. Keep it Cosy, Not Hot</h3><p style="margin:0;">18-22°C is ideal. Keep away from sunlight and radiators.</p></div>
+    </div>
+    <div class="card card-yellow">
+      <h3>4. Fill With Treated Water &amp; "Cycle" the Tank</h3>
+      <p style="margin:0;">Add a water conditioner, then wait. <b>Don't add your fish until water tests show the tank is fully cycled</b> — this depends on tiny bacteria growing, not the calendar, and usually takes several weeks. See Chapter 6!</p>
+    </div>
+  </div>
+
+  <!-- 6: NITROGEN CYCLE -->
+  <div class="page" data-page="6">
+    <div class="chapter-tag science">CHAPTER 6 · SCIENCE BIT 🔬</div>
+    <h1 class="pagetitle" style="font-size:27px;">The Tiny Invisible Helpers</h1>
+    <p>The most important secret in fishkeeping — let's tell it like a story!</p>
+    <div class="card">🐟 Goldfish make wee and poo, just like any other pet.</div>
+    <div class="card card-pink">That creates <b>ammonia</b> — poisonous to fish! 😱</div>
+    <div style="text-align:center; font-size:22px;">⬇️</div>
+    <div class="card card-yellow"><b>Millions of tiny helpful bacteria</b> live in your filter and gravel — working hard all day, even though you can't see them!</div>
+    <div style="text-align:center; font-size:22px;">⬇️</div>
+    <div class="card card-green" style="text-align:center; font-size:15.5px;"><b>🐟 Fish waste → Ammonia 😱 → Nitrite 😬 → Nitrate 🙂</b></div>
+    <div style="text-align:center; font-size:22px;">⬇️</div>
+    <div class="card">When you change some water each week, the nitrate goes away too. Never rinse your filter under the tap — you'd wash away the helpers!</div>
+  </div>
+
+  <!-- 7: WATER CARE -->
+  <div class="page" data-page="7">
+    <div class="chapter-tag">CHAPTER 7</div>
+    <h1 class="pagetitle" style="font-size:27px;">Keeping the Water Healthy 💧</h1>
+    <div class="card fishcard"><div class="icon-circle" style="background:#a6e3ff;">📅</div><div><h3 style="margin:0;">Every Day</h3><p style="margin:0;">Check your fish and the water look clear and happy.</p></div></div>
+    <div class="card fishcard"><div class="icon-circle" style="background:#ffe08a;">🧪</div><div><h3 style="margin:0;">Every Week</h3><p style="margin:0;">Test the water (ask a grown-up). Wipe algae off the glass.</p></div></div>
+    <div class="card fishcard"><div class="icon-circle" style="background:#b7e4c7;">🚿</div><div><h3 style="margin:0;">Every Week or Two</h3><p style="margin:0;">Change 10-20% of the water with conditioned water.</p></div></div>
+    <div class="card fishcard"><div class="icon-circle" style="background:#ffb3c6;">🧹</div><div><h3 style="margin:0;">Every Month</h3><p style="margin:0;">Rinse the filter gently in old tank water only.</p></div></div>
+    <div class="card card-yellow"><h3>⚠️ Never Do This!</h3><ul style="margin:0;"><li>Never change 100% of the water at once</li><li>Never use soap or chemicals in the tank</li><li>Never rinse your filter under the tap</li></ul></div>
+  </div>
+
+  <!-- 8: FEEDING -->
+  <div class="page" data-page="8">
+    <div class="chapter-tag">CHAPTER 8</div>
+    <h1 class="pagetitle" style="font-size:27px;">Feeding Your Goldfish 🍽️</h1>
+    <div class="card card-green"><h3>How Much &amp; How Often</h3><p style="margin:0;">Flakes or sinking pellets, <b>1-2 times a day</b> — what your fish can finish in 2 minutes.</p></div>
+    <div class="grid3">
+      <div class="card card-green"><h3 style="font-size:15px;">✅ Good Treats</h3><p style="margin:0; font-size:13.5px;">Peas, broccoli, spinach, bloodworms, daphnia, brine shrimp</p></div>
+      <div class="card card-yellow"><h3 style="font-size:15px;">🤏 Sometimes</h3><p style="margin:0; font-size:13.5px;">Cucumber, lettuce</p></div>
+      <div class="card card-red"><h3 style="font-size:15px;">❌ Never</h3><p style="margin:0; font-size:13.5px;">Bread, crackers, cereal, cheese</p></div>
+    </div>
+    <div class="card card-pink"><h3>🚫 The Golden Rule</h3><p style="margin:0; text-align:center; font-weight:bold; color:#b35c00;">"When in doubt, don't feed!"</p></div>
+  </div>
+
+  <!-- 9: HAPPY SIGNS -->
+  <div class="page" data-page="9">
+    <div class="chapter-tag">CHAPTER 9</div>
+    <h1 class="pagetitle" style="font-size:27px;">Is My Goldfish Happy? 😊</h1>
+    <div class="grid2">
+      <div class="card card-green"><h3>✅ Happy Fish</h3><ul style="margin:0;"><li>Exploring &amp; swimming</li><li>Begging for food</li><li>Fins open</li><li>Bright colour</li></ul></div>
+      <div class="card card-pink"><h3>⚠️ Stressed Fish</h3><ul style="margin:0;"><li>Hiding a lot</li><li>Clamped fins</li><li>Sitting in a corner</li><li>Gasping at surface</li></ul></div>
+    </div>
+    <div class="card card-yellow"><h3>💛 Things Goldfish Like</h3><p style="margin:0;">Hiding places · clean water · gentle current · exploring · routine · getting to know you!</p></div>
+  </div>
+
+  <!-- 10: TANK FRIENDS -->
+  <div class="page" data-page="10">
+    <div class="chapter-tag">CHAPTER 10</div>
+    <h1 class="pagetitle" style="font-size:27px;">Can My Goldfish Have Friends? 🐠🐠</h1>
+    <div class="card card-green"><h3>✅ Usually Good</h3><p style="margin:0;">Other goldfish, especially similar size and speed.</p></div>
+    <div class="card card-yellow"><h3>🤔 Advanced Only</h3><p style="margin:0;">Hillstream or weather loaches — need very experienced keepers.</p></div>
+    <div class="card card-red"><h3>❌ Usually Avoid</h3><p style="margin:0;">Tropical fish, tiny fish (may become a snack!), aggressive fish.</p></div>
+    <div class="card" style="text-align:center;"><p style="margin:0; font-weight:bold; color:#1c6e8c;">Goldfish are happiest with other goldfish that swim at the same speed! 🐟💫</p></div>
+  </div>
+
+  <!-- 11: PLANTS -->
+  <div class="page" data-page="11">
+    <div class="chapter-tag">CHAPTER 11</div>
+    <h1 class="pagetitle" style="font-size:27px;">Plants For Your Tank 🌿</h1>
+    <div class="card card-green"><h3>🌿 These Usually Survive</h3><p style="margin:0;">Anubias, Java Fern, and Hornwort are tough enough for a nibbling goldfish.</p></div>
+    <div class="card card-pink"><h3>😋 These Become Lunch!</h3><p style="margin:0;">Softer, leafy plants often get eaten fast — that's just your fish enjoying a tasty snack!</p></div>
+  </div>
+
+  <!-- 12: SEASONS -->
+  <div class="page" data-page="12">
+    <div class="chapter-tag">CHAPTER 12</div>
+    <h1 class="pagetitle" style="font-size:27px;">Seasons &amp; Your Goldfish ❄️☀️</h1>
+    <div class="card">Cooler water makes goldfish slower and less hungry — totally normal, just like some animals slow down in winter!</div>
+    <div class="card card-yellow"><h3>Tell the Difference</h3><p style="margin:0;">A slower fish in cold weather is usually fine. But if it stops eating for many days or hides constantly, check the Emergency chapter!</p></div>
+  </div>
+
+  <!-- 13: CAN GOLDFISH LEARN -->
+  <div class="page" data-page="13">
+    <div class="chapter-tag">CHAPTER 13</div>
+    <h1 class="pagetitle" style="font-size:27px;">Can Goldfish Learn? 🧠</h1>
+    <div class="card card-green"><p style="margin:0;">Yes! Goldfish can:</p><ul style="margin:6px 0 0 0;"><li>Recognise the faces of people who feed them</li><li>Learn feeding time</li><li>Follow a moving finger</li><li>Learn to be hand-fed</li></ul></div>
+    <div class="card card-yellow"><h3>🌟 Try This!</h3><p style="margin:0;">Feed from the same corner every day — soon your fish may swim over as soon as it sees you!</p></div>
+  </div>
+
+  <!-- 14: EMERGENCY -->
+  <div class="page" data-page="14">
+    <div class="chapter-tag emergency">EMERGENCY!</div>
+    <h1 class="pagetitle" style="font-size:27px;">What Should I Do If... 🚨</h1>
+    <div class="card card-red"><h3>🐟 My fish won't eat?</h3><p style="margin:0;">Tell a grown-up straight away.</p></div>
+    <div class="card card-red"><h3>🙃 My fish is upside down?</h3><p style="margin:0;">Tell a grown-up straight away.</p></div>
+    <div class="card card-red"><h3>🔌 The filter stops working?</h3><p style="margin:0;">Tell a grown-up straight away.</p></div>
+    <div class="card card-red"><h3>🟢 The water goes green or cloudy?</h3><p style="margin:0;">Tell a grown-up straight away.</p></div>
+    <div class="card card-yellow" style="text-align:center;"><p style="margin:0; font-weight:bold; color:#b35c00;">You're never in trouble for asking for help!</p></div>
+  </div>
+
+  <!-- 15: MYTH BUSTERS -->
+  <div class="page" data-page="15">
+    <div class="chapter-tag">CHAPTER 14</div>
+    <h1 class="pagetitle" style="font-size:27px;">Myth Busters! 🕵️</h1>
+    <div class="myth">❌ Goldfish only live a few months.</div><div class="fact">✅ Many live 15-20 years!</div>
+    <div class="myth">❌ Goldfish only remember for three seconds.</div><div class="fact">✅ They remember people &amp; routines for months.</div>
+    <div class="myth">❌ Goldfish belong in bowls.</div><div class="fact">✅ They need a proper aquarium.</div>
+    <div class="myth">❌ Goldfish stay tiny forever.</div><div class="fact">✅ Some grow over 30cm long!</div>
+  </div>
+
+  <!-- 16: JOBS CHART -->
+  <div class="page" data-page="16">
+    <div class="chapter-tag">CHAPTER 15</div>
+    <h1 class="pagetitle" style="font-size:27px;">Eilidh &amp; Finlay's Jobs Chart ⭐</h1>
+    <p>Looking after a goldfish is a team effort!</p>
+    <div class="grid3">
+      <div class="card card-pink"><h3>Eilidh's Jobs</h3><p style="margin:0;">✅ Feed fish<br>✅ Count fish<br>✅ Say hello<br>✅ Look for happy swimming</p></div>
+      <div class="card card-green"><h3>Finlay's Jobs</h3><p style="margin:0;">✅ Check bubbles<br>✅ Tell a grown-up if water looks cloudy<br>✅ Help add conditioner</p></div>
+      <div class="card card-yellow"><h3>Grown-Ups' Jobs</h3><p style="margin:0;">⭐ Test water<br>⭐ Clean filter<br>⭐ Water changes</p></div>
+    </div>
+  </div>
+
+  <!-- 17: DETECTIVE DIARY -->
+  <div class="page" data-page="17">
+    <div class="chapter-tag">CHAPTER 16</div>
+    <h1 class="pagetitle" style="font-size:27px;">Goldfish Detective 🕵️‍♀️🐠</h1>
+    <p>Tap the boxes below and type to keep your very own diary right here!</p>
+    <table class="diary" id="diaryTable">
+      <tr><th>Date</th><th>Fish count</th><th>Colour</th><th>Swimming fast?</th><th>Eating?</th><th>Water clear?</th></tr>
+    </table>
+    <button class="navbtn" style="margin-top:10px;" onclick="addDiaryRow()">➕ Add a row</button>
+  </div>
+
+  <!-- 18: QUIZ -->
+  <div class="page" data-page="18">
+    <div class="chapter-tag">QUIZ TIME</div>
+    <h1 class="pagetitle" style="font-size:27px;">Test Your Goldfish Knowledge! 📝</h1>
+    <p>Tap an answer for each question to find out right away if you got it right!</p>
+    <div id="quizContainer"></div>
+    <div id="scoreBox" style="display:none;">
+      <div id="scoreBig"></div>
+      <div id="scoreMsg" style="font-size:15px; font-weight:bold; color:#1c6e8c;"></div>
+      <button id="retryBtn" onclick="resetQuiz()">Try Again 🔄</button>
+    </div>
+  </div>
+
+  <!-- 19: PARENT CORNER -->
+  <div class="page parent" data-page="19">
+    <div class="chapter-tag" style="background:#455a64; box-shadow:0 3px 0 #263238;">PARENT CORNER</div>
+    <h1 class="pagetitle" style="font-size:26px; color:#37474f; text-shadow:none;">A Quick Reference for Grown-Ups</h1>
+    <p>The rest of this guide is written for the kids — this page is for you.</p>
+    <div class="parentterm"><b>Ammonia:</b> Toxic fish waste product; should read 0ppm once established.</div>
+    <div class="parentterm"><b>Nitrite:</b> Toxic intermediate stage of the nitrogen cycle; also 0ppm once cycled.</div>
+    <div class="parentterm"><b>Nitrate:</b> End product, far less toxic; controlled with regular partial water changes.</div>
+    <div class="parentterm"><b>GH/KH:</b> Water hardness — worth testing if pH seems unstable.</div>
+    <div class="parentterm"><b>Dechlorinator:</b> Neutralises chlorine/chloramine — use on every water change.</div>
+    <div class="parentterm"><b>Fishless cycling:</b> Establishing bacteria before adding fish — the kinder method.</div>
+    <div class="parentterm"><b>Quarantine:</b> Separate tank for new arrivals for 2-4 weeks.</div>
+    <div class="parentterm"><b>Test kits:</b> Liquid master kits are more accurate long-term than strips.</div>
+    <div class="card card-yellow"><p style="margin:0;">Fancy varieties (Oranda, Fantail) are more delicate swimmers and shouldn't be mixed with fast single-tailed varieties (Common, Comet).</p></div>
+  </div>
+
+</div>
+
+<script>
+  const pages = document.querySelectorAll('.page');
+  const navdots = document.getElementById('navdots');
+  const icons = ['🏠','👋','🔍','🐟','🥣','🏠','🔬','💧','🍽️','😊','🐠','🌿','❄️','🧠','🚨','🕵️','⭐','📔','📝','👪'];
+  const labels = ['Cover','Welcome','Equipment','Fish Types','Bowls','Tank Setup','Nitrogen Cycle','Water Care','Feeding','Happy Signs','Tank Friends','Plants','Seasons','Can They Learn?','Emergency','Myth Busters','Jobs Chart','Detective Diary','Quiz','Parent Corner'];
+  let current = 0;
+
+  icons.forEach((icon, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'navdot' + (i===0 ? ' active' : '');
+    dot.textContent = icon;
+    dot.title = labels[i];
+    dot.onclick = () => goTo(i);
+    navdots.appendChild(dot);
+  });
+
+  function goTo(i) {
+    pages.forEach(p => p.classList.remove('active'));
+    document.querySelector(`.page[data-page="${i}"]`).classList.add('active');
+    document.querySelectorAll('.navdot').forEach((d, idx) => d.classList.toggle('active', idx===i));
+    current = i;
+    updateBottom();
+    document.querySelector(`.page[data-page="${i}"]`).scrollTop = 0;
+  }
+
+  function updateBottom() {
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === pages.length - 1;
+    document.getElementById('pageLabel').textContent = labels[current] + ' · ' + (current+1) + ' / ' + pages.length;
+  }
+
+  const bottombar = document.createElement('div');
+  bottombar.id = 'bottombar';
+  bottombar.innerHTML = `<button class="navbtn" id="prevBtn" onclick="goTo(current-1)">⬅ Back</button><span id="pageLabel"></span><button class="navbtn" id="nextBtn" onclick="goTo(current+1)">Next ➡</button>`;
+  document.getElementById('app').appendChild(bottombar);
+  updateBottom();
+
+  // ---------- DIARY ----------
+  function addDiaryRow() {
+    const table = document.getElementById('diaryTable');
+    const row = table.insertRow();
+    for (let i = 0; i < 6; i++) {
+      const cell = row.insertCell();
+      cell.contentEditable = "true";
+      cell.textContent = i >= 3 ? "Yes / No" : "";
+    }
+  }
+  for (let i = 0; i < 4; i++) addDiaryRow();
+
+  // ---------- QUIZ ----------
+  const quizData = [
+    { q: "What is the minimum tank size for one goldfish?", options: ["A small bowl", "75-100 litres", "5 litres"], correct: 1 },
+    { q: "Which goldfish has a bubbly \"hat\" on its head?", options: ["Comet", "Common Goldfish", "Oranda"], correct: 2 },
+    { q: "How often should you feed your goldfish?", options: ["Once a week", "1-2 times a day", "All day long"], correct: 1 },
+    { q: "What should you do before adding new tap water to the tank?", options: ["Add water conditioner", "Add soap", "Nothing, just pour it in"], correct: 0 },
+    { q: "The helpful bacteria in your filter turn ammonia into...", options: ["Sugar", "Nitrite, then nitrate", "Salt"], correct: 1 },
+    { q: "What's the ideal water temperature range for goldfish?", options: ["30-35°C", "0-5°C", "18-22°C"], correct: 2 },
+    { q: "Which food should you NEVER give your goldfish?", options: ["Peas", "Bread", "Bloodworms"], correct: 1 },
+    { q: "What's the best kind of tank friend for a goldfish?", options: ["A tiny tropical fish", "Another goldfish, similar size and speed", "Any fish at all"], correct: 1 }
+  ];
+  let score = 0;
+  let answered = 0;
+
+  function buildQuiz() {
+    const container = document.getElementById('quizContainer');
+    container.innerHTML = '';
+    score = 0; answered = 0;
+    document.getElementById('scoreBox').style.display = 'none';
+
+    quizData.forEach((item, qi) => {
+      const qDiv = document.createElement('div');
+      qDiv.className = 'card quizQ';
+      qDiv.innerHTML = `<p style="margin:0;"><b>${qi+1}.</b> ${item.q}</p><div class="quizOptions" id="opts-${qi}"></div><div class="quizFeedback" id="fb-${qi}"></div>`;
+      container.appendChild(qDiv);
+      const optsDiv = qDiv.querySelector(`#opts-${qi}`);
+      item.options.forEach((opt, oi) => {
+        const btn = document.createElement('div');
+        btn.className = 'quizOpt';
+        btn.textContent = opt;
+        btn.onclick = () => selectAnswer(qi, oi, btn, optsDiv);
+        optsDiv.appendChild(btn);
+      });
+    });
+  }
+
+  function selectAnswer(qi, oi, btn, optsDiv) {
+    const allOpts = optsDiv.querySelectorAll('.quizOpt');
+    if (allOpts[0].classList.contains('disabled')) return;
+    allOpts.forEach(o => o.classList.add('disabled'));
+    const fb = document.getElementById(`fb-${qi}`);
+    if (oi === quizData[qi].correct) {
+      btn.classList.add('correct');
+      fb.textContent = "🎉 Correct! Well done!";
+      fb.style.color = '#1b5e20';
+      score++;
+    } else {
+      btn.classList.add('wrong');
+      allOpts[quizData[qi].correct].classList.add('correct');
+      fb.textContent = "Not quite — the correct answer is highlighted in green!";
+      fb.style.color = '#a4133c';
+    }
+    answered++;
+    if (answered === quizData.length) showScore();
+  }
+
+  function showScore() {
+    const box = document.getElementById('scoreBox');
+    box.style.display = 'block';
+    document.getElementById('scoreBig').textContent = `${score} / ${quizData.length}`;
+    let msg = '';
+    if (score === quizData.length) msg = "🏆 Amazing! You're a Goldfish Care Expert!";
+    else if (score >= quizData.length - 2) msg = "🐠 Great job! You really know your goldfish!";
+    else msg = "🌟 Nice try! Have another read through the guide and try again!";
+    document.getElementById('scoreMsg').textContent = msg;
+    box.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  function resetQuiz() { buildQuiz(); }
+  buildQuiz();
+</script>
+
+</body>
+</html>
